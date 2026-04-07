@@ -30,8 +30,12 @@ public class ProductService {
                     "Product already exists with code: " + productDto.getProductCode());
         }
 
+        if (productRepository.existsByProductName(productDto.getProductName())) {
+            throw new ProductAlreadyExistsException(
+                    "Product already exists with name: " + productDto.getProductName());
+        }
+
         Product product = ProductMapper.mapToProduct(productDto, new Product());
-        product.setActive(productDto.getActive());
 
         if (productDto.getStock() != null) {
             Stock stock = StockMapper.mapToStock(productDto.getStock(), new Stock());
@@ -68,6 +72,12 @@ public class ProductService {
         Product existingProduct = productRepository.findByProductCode(productDto.getProductCode())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Product", "productCode", productDto.getProductCode()));
+
+        if (!existingProduct.getProductName().equals(productDto.getProductName()) &&
+                productRepository.existsByProductName(productDto.getProductName())) {
+            throw new ProductAlreadyExistsException(
+                    "Product already exists with name: " + productDto.getProductName());
+        }
 
         ProductMapper.mapToProduct(productDto, existingProduct);
 

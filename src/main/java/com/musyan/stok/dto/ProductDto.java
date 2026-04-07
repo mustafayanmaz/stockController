@@ -44,7 +44,7 @@ public class ProductDto {
     @NotNull(message = "Active status must not be null")
     @Schema(description = "Whether the product is active", example = "true")
     private Boolean active;
-
+//stock dto olarak degil sotck id
     @Valid
     @Schema(description = "Stock information for this product")
     private StockDto stock;

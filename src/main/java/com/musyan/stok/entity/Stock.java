@@ -24,7 +24,8 @@ public class Stock extends BaseEntity {
 
     @Column(nullable = false)
     private Integer quantity;
-
+//maliyet , birim, birim fiyatı stockdate ekle
+    //ilerde kar marjı tarzı hesaplamalar yapıcaz ona uygun olmalı
     @Column(nullable = false, length = 30)
     private String unit;
 

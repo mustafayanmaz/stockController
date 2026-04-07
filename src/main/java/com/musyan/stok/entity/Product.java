@@ -22,7 +22,7 @@ public class Product extends BaseEntity {
     @Column(nullable = false, unique = true, length = 50)
     private String productCode;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = false, unique = true, length = 150)
     private String productName;
 
     @Column(nullable = false, length = 100)
@@ -41,3 +41,7 @@ public class Product extends BaseEntity {
     @ToString.Exclude
     private Stock stock;
 }
+
+
+//request header da token gelsin validse geçişe izin ver,token control, kullanıcıadı ve passw, admin admin token yapısı
+//servisin çalışabilmesi için token geçerliliği (max 1 saat gibi) (mekanizma bul token uretimi icin)

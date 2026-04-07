@@ -11,4 +11,8 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     Optional<Product> findByProductCode(String productCode);
 
     boolean existsByProductCode(String productCode);
+
+    Optional<Product> findByProductName(String productName);
+
+    boolean existsByProductName(String productName);
 }
