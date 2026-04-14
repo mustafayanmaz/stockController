@@ -2,6 +2,7 @@ package com.musyan.stok.controller;
 
 import com.musyan.stok.dto.ResponseDto;
 import com.musyan.stok.dto.StockDto;
+import com.musyan.stok.dto.StockRemoveDto;
 import com.musyan.stok.dto.StockTransactionDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,4 +30,10 @@ public interface IStockController {
     ResponseEntity<ResponseDto> addStockTransaction(
             @PathVariable("productCode") @NotBlank(message = "Product code must not be blank") String productCode,
             @Valid @RequestBody StockTransactionDto transactionDto);
+
+    @Operation(summary = "Remove stock", description = "REST API to remove (consume) quantity from existing stock")
+    @PostMapping("/{productCode}/remove")
+    ResponseEntity<ResponseDto> removeStockTransaction(
+            @PathVariable("productCode") @NotBlank(message = "Product code must not be blank") String productCode,
+            @Valid @RequestBody StockRemoveDto removeDto);
 }

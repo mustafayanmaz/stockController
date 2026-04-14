@@ -9,6 +9,12 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.ArrayList;
 import java.util.List;
 
+//order islemi yapılacak birer birer satın alıncak
+//hangi stok kartından alındıgını takip et satıs üzerinde stok numarası olamalı
+//fifo  , ortalama maliyet hesabını method olarak yap, aktif stoktaki urunlerimin tutarı uzerinden yapılması lazım
+//kendi zamanındaki fiyatına gore olacak ortalama maliyet arttı zam yapılmalı tarzı bir mantık çıkmalı ortaya
+// ortalama maliyet hesabını service içinde değilde asenkron olarak çağırma işlemi olsun
+
 public final class ProductSpecification {
 
     private ProductSpecification() {

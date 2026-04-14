@@ -2,7 +2,6 @@ package com.musyan.stok.service;
 
 import com.musyan.stok.dto.ProductDto;
 import com.musyan.stok.dto.ProductFilterDto;
-import com.musyan.stok.dto.StockDto;
 import com.musyan.stok.entity.Product;
 import com.musyan.stok.entity.Stock;
 import com.musyan.stok.exception.ProductAlreadyExistsException;

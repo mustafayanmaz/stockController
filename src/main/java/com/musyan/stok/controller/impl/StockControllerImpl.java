@@ -4,6 +4,7 @@ import com.musyan.stok.constants.StockConstants;
 import com.musyan.stok.controller.IStockController;
 import com.musyan.stok.dto.ResponseDto;
 import com.musyan.stok.dto.StockDto;
+import com.musyan.stok.dto.StockRemoveDto;
 import com.musyan.stok.dto.StockTransactionDto;
 import com.musyan.stok.service.StockService;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,24 @@ public class StockControllerImpl implements IStockController {
             return ResponseEntity
                     .status(HttpStatus.CREATED)
                     .body(new ResponseDto(StockConstants.STATUS_201, StockConstants.MESSAGE_201));
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.EXPECTATION_FAILED)
+                .body(new ResponseDto(StockConstants.STATUS_417, StockConstants.MESSAGE_417_UPDATE));
+    }
+
+    @Override
+    public ResponseEntity<ResponseDto> removeStockTransaction(
+            @PathVariable String productCode,
+            @RequestBody StockRemoveDto removeDto) {
+
+        boolean isRemoved = stockService.removeStockTransaction(productCode, removeDto);
+
+        if (isRemoved) {
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ResponseDto(StockConstants.STATUS_200, StockConstants.MESSAGE_200));
         }
 
         return ResponseEntity

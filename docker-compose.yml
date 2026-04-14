@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: stok_postgres
+    environment:
+      POSTGRES_USER: stok_user
+      POSTGRES_PASSWORD: stok_password
+      POSTGRES_DB: stok_db
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      # Veritabanı verisi kalıcı tutmak için volume
+      - postgres_data:/var/lib/postgresql/data
+      # İlk başta schema.sql'i çalıştırmak için
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stok_user -d stok_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stok_network
+
+  # Spring Boot Application Service
+  app:
+    build: .
+    container_name: stok_app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database configuration
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/stok_db
+      SPRING_DATASOURCE_USERNAME: stok_user
+      SPRING_DATASOURCE_PASSWORD: stok_password
+      
+      # JPA/Hibernate configuration
+      # ddl-auto=none: Tablolar PostgreSQL init scripti ile zaten oluşturuldu
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_JPA_SHOW_SQL: "false"
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "false"
+      # Spring'in schema.sql'i tekrar çalıştırmasını önle (PostgreSQL init ediyor)
+      SPRING_SQL_INIT_MODE: never
+      
+      # Logging
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_COM_MUSYAN_STOK: DEBUG
+      
+      # Server configuration
+      SERVER_PORT: 8080
+      SERVER_SERVLET_CONTEXT_PATH: /
+      
+      # Actuator
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics
+    ports:
+      - "8080:8080"
+    volumes:
+      # Opsiyonel: Real-time log görmek için
+      - ./logs:/app/logs
+    networks:
+      - stok_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  stok_network:
+    driver: bridge

@@ -7,23 +7,24 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "stock_transactions")
+@Table(name = "sale_orders")
 @Getter
 @Setter
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StockTransaction extends BaseEntity {
+public class SaleOrder extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long transactionId;
+    private Long orderId;
+
+    @Column(nullable = false, unique = true, length = 40)
+    private String orderCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stock_id", nullable = false)
-    @ToString.Exclude
-    private Stock stock;
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
     @Column(nullable = false)
     private Integer quantity;
@@ -32,15 +33,14 @@ public class StockTransaction extends BaseEntity {
     private BigDecimal unitPrice;
 
     @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal unitCost;
+    private BigDecimal totalAmount;
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalCost;
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal grossProfit;
 
     @Column(nullable = false)
-    private Integer remainingQuantity;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
-    private StockTransactionType transactionType;
-
-    @Column(nullable = false)
-    private LocalDateTime transactionDate;
+    private LocalDateTime orderDate;
 }

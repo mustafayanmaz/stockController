@@ -41,7 +41,3 @@ public class Product extends BaseEntity {
     @ToString.Exclude
     private Stock stock;
 }
-
-
-//request header da token gelsin validse geçişe izin ver,token control, kullanıcıadı ve passw, admin admin token yapısı
-//servisin çalışabilmesi için token geçerliliği (max 1 saat gibi) (mekanizma bul token uretimi icin)
