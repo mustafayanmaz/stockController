@@ -2,18 +2,11 @@ package com.musyan.stok.specification;
 
 import com.musyan.stok.dto.ProductFilterDto;
 import com.musyan.stok.entity.Product;
-import com.musyan.stok.entity.Stock;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
-
-//order islemi yapılacak birer birer satın alıncak
-//hangi stok kartından alındıgını takip et satıs üzerinde stok numarası olamalı
-//fifo  , ortalama maliyet hesabını method olarak yap, aktif stoktaki urunlerimin tutarı uzerinden yapılması lazım
-//kendi zamanındaki fiyatına gore olacak ortalama maliyet arttı zam yapılmalı tarzı bir mantık çıkmalı ortaya
-// ortalama maliyet hesabını service içinde değilde asenkron olarak çağırma işlemi olsun
 
 public final class ProductSpecification {
 
@@ -53,8 +46,7 @@ public final class ProductSpecification {
             }
 
             if (Boolean.TRUE.equals(filter.getInStock())) {
-                Join<Product, Stock> stockJoin = root.join("stock", JoinType.INNER);
-                predicates.add(cb.greaterThan(stockJoin.get("quantity"), 0));
+                predicates.add(cb.greaterThan(root.get("quantity"), 0));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

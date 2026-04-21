@@ -28,16 +28,15 @@ public class Product extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String category;
 
-    @Column(length = 500)
-    private String description;
-
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal unitCost;
 
     @Column(nullable = false)
     private Boolean active;
 
-    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @ToString.Exclude
-    private Stock stock;
+    @Column(nullable = false)
+    private Integer quantity;
+
+    @Column(nullable = false, length = 30)
+    private String unit;
 }

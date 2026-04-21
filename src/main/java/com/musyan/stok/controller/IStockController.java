@@ -2,11 +2,11 @@ package com.musyan.stok.controller;
 
 import com.musyan.stok.dto.ResponseDto;
 import com.musyan.stok.dto.StockDto;
-import com.musyan.stok.dto.StockRemoveDto;
 import com.musyan.stok.dto.StockTransactionDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +19,7 @@ public interface IStockController {
     @GetMapping("/{productCode}")
     ResponseEntity<StockDto> fetchStock(@PathVariable("productCode") @NotBlank(message = "Product code must not be blank") String productCode);
 
-    @Operation(summary = "Update stock", description = "REST API to update stock quantity, unit and minimum level by product code")
+        @Operation(summary = "Update stock", description = "REST API to update stock quantity and unit by product code")
     @PutMapping("/{productCode}")
     ResponseEntity<ResponseDto> updateStock(
             @PathVariable("productCode") @NotBlank(message = "Product code must not be blank") String productCode,
@@ -35,5 +35,5 @@ public interface IStockController {
     @PostMapping("/{productCode}/remove")
     ResponseEntity<ResponseDto> removeStockTransaction(
             @PathVariable("productCode") @NotBlank(message = "Product code must not be blank") String productCode,
-            @Valid @RequestBody StockRemoveDto removeDto);
+            @RequestParam @Min(value = 1, message = "Quantity must be at least 1") int quantity);
 }

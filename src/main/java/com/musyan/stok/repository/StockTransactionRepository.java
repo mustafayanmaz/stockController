@@ -8,9 +8,9 @@ import java.util.List;
 
 public interface StockTransactionRepository extends JpaRepository<StockTransaction, Long> {
 
-	List<StockTransaction> findByStockStockIdAndTransactionTypeAndRemainingQuantityGreaterThanOrderByTransactionDateAscTransactionIdAsc(
-			Long stockId,
-			StockTransactionType transactionType,
-			Integer remainingQuantity
-	);
+    List<StockTransaction> findByProductProductIdAndTransactionTypeAndRemainingQuantityGreaterThanOrderByTransactionDateAscTransactionIdAsc(
+            Long productId,
+            StockTransactionType transactionType,
+            Integer remainingQuantity
+    );
 }

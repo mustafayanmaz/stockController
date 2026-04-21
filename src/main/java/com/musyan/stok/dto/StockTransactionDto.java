@@ -17,11 +17,6 @@ public class StockTransactionDto {
     @Schema(description = "Quantity to add", example = "50")
     private Integer quantity;
 
-    @NotNull(message = "Unit price must not be null")
-    @DecimalMin(value = "0.0", message = "Unit price must be non-negative")
-    @Schema(description = "Sale price per unit", example = "120.50")
-    private BigDecimal unitPrice;
-
     @NotNull(message = "Unit cost must not be null")
     @DecimalMin(value = "0.0", message = "Unit cost must be non-negative")
     @Schema(description = "Cost price per unit", example = "100.00")

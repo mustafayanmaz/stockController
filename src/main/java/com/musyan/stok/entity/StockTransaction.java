@@ -21,15 +21,12 @@ public class StockTransaction extends BaseEntity {
     private Long transactionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stock_id", nullable = false)
+    @JoinColumn(name = "product_id", nullable = false)
     @ToString.Exclude
-    private Stock stock;
+    private Product product;
 
     @Column(nullable = false)
     private Integer quantity;
-
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal unitPrice;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal unitCost;

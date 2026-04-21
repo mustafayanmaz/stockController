@@ -33,13 +33,7 @@ public class SaleOrder extends BaseEntity {
     private BigDecimal unitPrice;
 
     @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal totalAmount;
-
-    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal totalCost;
-
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal grossProfit;
 
     @Column(nullable = false)
     private LocalDateTime orderDate;

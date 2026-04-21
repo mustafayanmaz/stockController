@@ -4,7 +4,6 @@ import com.musyan.stok.constants.StockConstants;
 import com.musyan.stok.controller.IStockController;
 import com.musyan.stok.dto.ResponseDto;
 import com.musyan.stok.dto.StockDto;
-import com.musyan.stok.dto.StockRemoveDto;
 import com.musyan.stok.dto.StockTransactionDto;
 import com.musyan.stok.service.StockService;
 import lombok.RequiredArgsConstructor;
@@ -22,61 +21,31 @@ public class StockControllerImpl implements IStockController {
 
     @Override
     public ResponseEntity<StockDto> fetchStock(@PathVariable String productCode) {
-        StockDto stockDto = stockService.fetchStockByProductCode(productCode);
-        return ResponseEntity.status(HttpStatus.OK).body(stockDto);
+        return ResponseEntity.ok(stockService.fetchStockByProductCode(productCode));
     }
 
     @Override
     public ResponseEntity<ResponseDto> updateStock(
             @PathVariable String productCode,
             @RequestBody StockDto stockDto) {
-
-        boolean isUpdated = stockService.updateStock(productCode, stockDto);
-
-        if (isUpdated) {
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(new ResponseDto(StockConstants.STATUS_200, StockConstants.MESSAGE_200));
-        }
-
-        return ResponseEntity
-                .status(HttpStatus.EXPECTATION_FAILED)
-                .body(new ResponseDto(StockConstants.STATUS_417, StockConstants.MESSAGE_417_UPDATE));
+        stockService.updateStock(productCode, stockDto);
+        return ResponseEntity.ok(new ResponseDto(StockConstants.STATUS_200, StockConstants.MESSAGE_200));
     }
 
     @Override
     public ResponseEntity<ResponseDto> addStockTransaction(
             @PathVariable String productCode,
             @RequestBody StockTransactionDto transactionDto) {
-
-        boolean isAdded = stockService.addStockTransaction(productCode, transactionDto);
-
-        if (isAdded) {
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(new ResponseDto(StockConstants.STATUS_201, StockConstants.MESSAGE_201));
-        }
-
-        return ResponseEntity
-                .status(HttpStatus.EXPECTATION_FAILED)
-                .body(new ResponseDto(StockConstants.STATUS_417, StockConstants.MESSAGE_417_UPDATE));
+        stockService.addStockTransaction(productCode, transactionDto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ResponseDto(StockConstants.STATUS_201, StockConstants.MESSAGE_201));
     }
 
     @Override
     public ResponseEntity<ResponseDto> removeStockTransaction(
             @PathVariable String productCode,
-            @RequestBody StockRemoveDto removeDto) {
-
-        boolean isRemoved = stockService.removeStockTransaction(productCode, removeDto);
-
-        if (isRemoved) {
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(new ResponseDto(StockConstants.STATUS_200, StockConstants.MESSAGE_200));
-        }
-
-        return ResponseEntity
-                .status(HttpStatus.EXPECTATION_FAILED)
-                .body(new ResponseDto(StockConstants.STATUS_417, StockConstants.MESSAGE_417_UPDATE));
+            @RequestParam int quantity) {
+        stockService.removeStockTransaction(productCode, quantity);
+        return ResponseEntity.ok(new ResponseDto(StockConstants.STATUS_200, StockConstants.MESSAGE_200));
     }
 }

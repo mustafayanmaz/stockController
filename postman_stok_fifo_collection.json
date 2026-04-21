@@ -1,0 +1,160 @@
+{
+  "info": {
+    "name": "Stok FIFO Test Collection",
+    "_postman_id": "b8f0c57c-c28d-49f2-a0a8-8b6f90ce2f4b",
+    "description": "FIFO stok, remove ve order akisini dogrulamak icin 4 test senaryosu",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "admin" },
+    { "key": "token", "value": "" },
+    { "key": "productCode", "value": "FIFO-001" }
+  ],
+  "item": [
+    {
+      "name": "00 - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.expect(json.token).to.exist;",
+              "pm.collectionVariables.set('token', json.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 - Product Create (initial stock 0)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/api/products",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productCode\": \"{{productCode}}\",\n  \"productName\": \"FIFO Demo Product\",\n  \"category\": \"Electronics\",\n  \"description\": \"FIFO test product\",\n  \"unitCost\": 100.00,\n  \"active\": true,\n  \"stock\": {\n    \"quantity\": 0,\n    \"unit\": \"pcs\",\n    \"minimumStockLevel\": 1\n  }\n}"
+        }
+      }
+    },
+    {
+      "name": "02 - Add lot #1 (qty 10, cost 100)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/api/stocks/{{productCode}}/add",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 10,\n  \"unitPrice\": 130.00,\n  \"unitCost\": 100.00\n}"
+        }
+      }
+    },
+    {
+      "name": "03 - Add lot #2 (qty 20, cost 120)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/api/stocks/{{productCode}}/add",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 20,\n  \"unitPrice\": 150.00,\n  \"unitCost\": 120.00\n}"
+        }
+      }
+    },
+    {
+      "name": "04 - Check stock after adds",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/api/stocks/{{productCode}}"
+      }
+    },
+    {
+      "name": "05 - FIFO remove (qty 12)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/api/stocks/{{productCode}}/remove",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 12\n}"
+        }
+      }
+    },
+    {
+      "name": "06 - Check stock after remove",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/api/stocks/{{productCode}}"
+      }
+    },
+    {
+      "name": "07 - Create Order (qty 8)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/api/orders",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productCode\": \"{{productCode}}\",\n  \"quantity\": 8,\n  \"unitPrice\": 160.00\n}"
+        }
+      }
+    },
+    {
+      "name": "08 - Check stock after order",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/api/stocks/{{productCode}}"
+      }
+    },
+    {
+      "name": "09 - Average cost verify on product",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/api/products/{{productCode}}"
+      }
+    }
+  ]
+}

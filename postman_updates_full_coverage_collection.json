@@ -1,0 +1,397 @@
+{
+  "info": {
+    "_postman_id": "f42d394e-b9f7-42a9-89c3-6157b4dd74ff",
+    "name": "Stok Updates Full Coverage",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Extended regression tests for auth, validation, filter, stock IN/OUT/FIFO, order flow, and race-condition probe."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwtToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "admin" },
+    { "key": "jwtToken", "value": "" },
+    { "key": "productCodeA", "value": "PRD-FULL-001" },
+    { "key": "productCodeB", "value": "PRD-FULL-002" },
+    { "key": "missingProductCode", "value": "PRD-FULL-MISSING" }
+  ],
+  "item": [
+    {
+      "name": "00 - Login",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.expect(json.token).to.be.a('string').and.not.empty;",
+              "pm.collectionVariables.set('jwtToken', json.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 - Unauthorized Probe (should fail)",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 401 or 403', function () {",
+              "  pm.expect([401, 403]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Cleanup Product A",
+      "request": {
+        "method": "DELETE",
+        "url": { "raw": "{{baseUrl}}/api/products/{{productCodeA}}", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productCodeA}}"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('status 200 or 404', function(){ pm.expect([200,404]).to.include(pm.response.code); });"] } }]
+    },
+    {
+      "name": "03 - Cleanup Product B",
+      "request": {
+        "method": "DELETE",
+        "url": { "raw": "{{baseUrl}}/api/products/{{productCodeB}}", "host": ["{{baseUrl}}"], "path": ["api", "products", "{{productCodeB}}"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('status 200 or 404', function(){ pm.expect([200,404]).to.include(pm.response.code); });"] } }]
+    },
+    {
+      "name": "04 - Validation Negative (invalid productCode format)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productCode\": \"prd-invalid-01\",\n  \"productName\": \"Invalid Code Product\",\n  \"category\": \"Testing\",\n  \"description\": \"should fail due to lowercase\",\n  \"unitCost\": 10.00,\n  \"active\": true,\n  \"stock\": {\n    \"quantity\": 0,\n    \"unit\": \"pcs\",\n    \"minimumStockLevel\": 1\n  }\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 400', function () { pm.response.to.have.status(400); });",
+              "const json = pm.response.json();",
+              "pm.test('validation message contains productCode', function () {",
+              "  pm.expect((json.message || '')).to.include('productCode');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Create Product A",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productCode\": \"{{productCodeA}}\",\n  \"productName\": \"Full Test Product A\",\n  \"category\": \"Electronics\",\n  \"description\": \"main fifo and order test product\",\n  \"unitCost\": 100.00,\n  \"active\": true,\n  \"stock\": {\n    \"quantity\": 0,\n    \"unit\": \"pcs\",\n    \"minimumStockLevel\": 5\n  }\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('status 201', function(){ pm.response.to.have.status(201); });"] } }]
+    },
+    {
+      "name": "06 - Create Product B (out of stock)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productCode\": \"{{productCodeB}}\",\n  \"productName\": \"Full Test Product B\",\n  \"category\": \"Electronics\",\n  \"description\": \"filter test product\",\n  \"unitCost\": 50.00,\n  \"active\": true,\n  \"stock\": {\n    \"quantity\": 0,\n    \"unit\": \"pcs\",\n    \"minimumStockLevel\": 2\n  }\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api", "products"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('status 201', function(){ pm.response.to.have.status(201); });"] } }]
+    },
+    {
+      "name": "07 - Add Stock Lot-1 to A",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"quantity\": 100,\n  \"unitPrice\": 150.00,\n  \"unitCost\": 100.00\n}" },
+        "url": { "raw": "{{baseUrl}}/api/stocks/{{productCodeA}}/add", "host": ["{{baseUrl}}"], "path": ["api", "stocks", "{{productCodeA}}", "add"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('status 201', function(){ pm.response.to.have.status(201); });"] } }]
+    },
+    {
+      "name": "08 - Add Stock Lot-2 to A",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"quantity\": 50,\n  \"unitPrice\": 170.00,\n  \"unitCost\": 120.00\n}" },
+        "url": { "raw": "{{baseUrl}}/api/stocks/{{productCodeA}}/add", "host": ["{{baseUrl}}"], "path": ["api", "stocks", "{{productCodeA}}", "add"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('status 201', function(){ pm.response.to.have.status(201); });"] } }]
+    },
+    {
+      "name": "09 - Filter inStock=true (should include A, exclude B)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"category\": \"Electronics\",\n  \"inStock\": true,\n  \"active\": true\n}" },
+        "url": { "raw": "{{baseUrl}}/api/products/filter", "host": ["{{baseUrl}}"], "path": ["api", "products", "filter"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', function(){ pm.response.to.have.status(200); });",
+              "const arr = pm.response.json();",
+              "const codes = arr.map(x => x.productCode);",
+              "pm.test('contains product A', function(){ pm.expect(codes).to.include(pm.collectionVariables.get('productCodeA')); });",
+              "pm.test('does not contain product B', function(){ pm.expect(codes).to.not.include(pm.collectionVariables.get('productCodeB')); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Remove 30 from A",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"quantity\": 30\n}" },
+        "url": { "raw": "{{baseUrl}}/api/stocks/{{productCodeA}}/remove", "host": ["{{baseUrl}}"], "path": ["api", "stocks", "{{productCodeA}}", "remove"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('status 200', function(){ pm.response.to.have.status(200); });"] } }]
+    },
+    {
+      "name": "11 - Order #1 FIFO Cost Check",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"productCode\": \"{{productCodeA}}\",\n  \"quantity\": 60,\n  \"unitPrice\": 200.00\n}" },
+        "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api", "orders"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 201', function(){ pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.test('fifo cost #1 expected', function(){",
+              "  pm.expect(Number(json.totalCost)).to.eql(6000);",
+              "  pm.expect(Number(json.totalAmount)).to.eql(12000);",
+              "  pm.expect(Number(json.grossProfit)).to.eql(6000);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Order #2 FIFO Cost Check",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"productCode\": \"{{productCodeA}}\",\n  \"quantity\": 50,\n  \"unitPrice\": 220.00\n}" },
+        "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api", "orders"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 201', function(){ pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.test('fifo cost #2 expected', function(){",
+              "  pm.expect(Number(json.totalCost)).to.eql(5800);",
+              "  pm.expect(Number(json.totalAmount)).to.eql(11000);",
+              "  pm.expect(Number(json.grossProfit)).to.eql(5200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Missing Product Add (404 product)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"quantity\": 5,\n  \"unitPrice\": 100.00,\n  \"unitCost\": 90.00\n}" },
+        "url": { "raw": "{{baseUrl}}/api/stocks/{{missingProductCode}}/add", "host": ["{{baseUrl}}"], "path": ["api", "stocks", "{{missingProductCode}}", "add"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 404', function(){ pm.response.to.have.status(404); });",
+              "const json = pm.response.json();",
+              "pm.test('message references Product', function(){",
+              "  pm.expect((json.message || '').toLowerCase()).to.include('product');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Remove Too Much (400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"quantity\": 9999\n}" },
+        "url": { "raw": "{{baseUrl}}/api/stocks/{{productCodeA}}/remove", "host": ["{{baseUrl}}"], "path": ["api", "stocks", "{{productCodeA}}", "remove"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 400', function(){ pm.response.to.have.status(400); });",
+              "const json = pm.response.json();",
+              "pm.test('message contains insufficient stock', function(){",
+              "  pm.expect((json.message || '').toLowerCase()).to.include('insufficient stock');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - Prepare Stock for Race (set quantity=10)",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quantity\": 10,\n  \"unit\": \"pcs\",\n  \"minimumStockLevel\": 1\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/stocks/{{productCodeA}}", "host": ["{{baseUrl}}"], "path": ["api", "stocks", "{{productCodeA}}"] }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('status 200', function(){ pm.response.to.have.status(200); });"] } }]
+    },
+    {
+      "name": "16 - Race Probe (parallel remove x2 quantity=10)",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/api/stocks/{{productCodeA}}", "host": ["{{baseUrl}}"], "path": ["api", "stocks", "{{productCodeA}}"] },
+        "description": "This request triggers two parallel remove calls from test script. Expected result: one success (200), one failure (400)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const token = pm.collectionVariables.get('jwtToken');",
+              "const baseUrl = pm.collectionVariables.get('baseUrl');",
+              "const code = pm.collectionVariables.get('productCodeA');",
+              "let doneCount = 0;",
+              "let statuses = [];",
+              "",
+              "function finish(done) {",
+              "  if (doneCount === 2) {",
+              "    const successCount = statuses.filter(s => s === 200).length;",
+              "    const failCount = statuses.filter(s => s >= 400).length;",
+              "    pm.test('race probe: exactly one success and one failure', function () {",
+              "      pm.expect(successCount).to.eql(1);",
+              "      pm.expect(failCount).to.eql(1);",
+              "    });",
+              "    done();",
+              "  }",
+              "}",
+              "",
+              "pm.test('parallel remove requests complete', function(done) {",
+              "  const requestOptions = {",
+              "    url: `${baseUrl}/api/stocks/${code}/remove`,",
+              "    method: 'POST',",
+              "    header: {",
+              "      'Content-Type': 'application/json',",
+              "      'Authorization': `Bearer ${token}`",
+              "    },",
+              "    body: {",
+              "      mode: 'raw',",
+              "      raw: JSON.stringify({ quantity: 10 })",
+              "    }",
+              "  };",
+              "",
+              "  pm.sendRequest(requestOptions, function(err, res) {",
+              "    statuses.push(res ? res.code : 0);",
+              "    doneCount += 1;",
+              "    finish(done);",
+              "  });",
+              "",
+              "  pm.sendRequest(requestOptions, function(err, res) {",
+              "    statuses.push(res ? res.code : 0);",
+              "    doneCount += 1;",
+              "    finish(done);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 - Final Stock Snapshot",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/api/stocks/{{productCodeA}}", "host": ["{{baseUrl}}"], "path": ["api", "stocks", "{{productCodeA}}"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status 200', function(){ pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test('quantity should be 0 after race probe', function(){",
+              "  pm.expect(json.quantity).to.eql(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

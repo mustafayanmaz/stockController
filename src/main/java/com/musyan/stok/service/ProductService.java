@@ -3,11 +3,9 @@ package com.musyan.stok.service;
 import com.musyan.stok.dto.ProductDto;
 import com.musyan.stok.dto.ProductFilterDto;
 import com.musyan.stok.entity.Product;
-import com.musyan.stok.entity.Stock;
 import com.musyan.stok.exception.ProductAlreadyExistsException;
 import com.musyan.stok.exception.ResourceNotFoundException;
 import com.musyan.stok.mapper.ProductMapper;
-import com.musyan.stok.mapper.StockMapper;
 import com.musyan.stok.repository.ProductRepository;
 import com.musyan.stok.specification.ProductSpecification;
 import lombok.RequiredArgsConstructor;
@@ -28,27 +26,19 @@ public class ProductService {
             throw new ProductAlreadyExistsException(
                     "Product already exists with code: " + productDto.getProductCode());
         }
-
         if (productRepository.existsByProductName(productDto.getProductName())) {
             throw new ProductAlreadyExistsException(
                     "Product already exists with name: " + productDto.getProductName());
         }
 
         Product product = ProductMapper.mapToProduct(productDto, new Product());
-
-        if (productDto.getStock() != null) {
-            Stock stock = StockMapper.mapToStock(productDto.getStock(), new Stock());
-            stock.setProduct(product);
-            product.setStock(stock);
-        }
-
+        product.setQuantity(productDto.getQuantity() != null ? productDto.getQuantity() : 0);
         productRepository.save(product);
     }
 
     public ProductDto fetchProductByCode(String productCode) {
         Product product = productRepository.findByProductCode(productCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productCode", productCode));
-
         return ProductMapper.mapToProductDto(product, new ProductDto());
     }
 
@@ -79,11 +69,6 @@ public class ProductService {
         }
 
         ProductMapper.mapToProduct(productDto, existingProduct);
-
-        if (productDto.getStock() != null && existingProduct.getStock() != null) {
-            StockMapper.mapToStock(productDto.getStock(), existingProduct.getStock());
-        }
-
         productRepository.save(existingProduct);
         return true;
     }
@@ -92,7 +77,6 @@ public class ProductService {
     public boolean deleteProductByCode(String productCode) {
         Product product = productRepository.findByProductCode(productCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productCode", productCode));
-
         productRepository.delete(product);
         return true;
     }

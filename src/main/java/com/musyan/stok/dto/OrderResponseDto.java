@@ -18,5 +18,4 @@ public class OrderResponseDto {
     private BigDecimal unitPrice;
     private BigDecimal totalAmount;
     private BigDecimal totalCost;
-    private BigDecimal grossProfit;
 }
