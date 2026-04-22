@@ -31,3 +31,16 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Dokumantasyon ve Notlar ###
+summary.md
+Updates.md
+Updates2.md
+Updates3.md
+Updates4.md
+Updates5.md
+DOCKER_ANLATIM.md
+DOCKER_KURULUM_REHBERI.md
+
+### Postman Koleksiyonlari ###
+postman_*.json
