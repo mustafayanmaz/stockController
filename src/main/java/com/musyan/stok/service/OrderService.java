@@ -4,12 +4,14 @@ import com.musyan.stok.dto.OrderRequestDto;
 import com.musyan.stok.dto.OrderResponseDto;
 import com.musyan.stok.entity.Product;
 import com.musyan.stok.entity.SaleOrder;
+import com.musyan.stok.entity.SaleOrderAllocation;
 import com.musyan.stok.entity.StockTransaction;
 import com.musyan.stok.entity.StockTransactionType;
 import com.musyan.stok.event.StockChangedEvent;
 import com.musyan.stok.exception.InsufficientStockException;
 import com.musyan.stok.exception.ResourceNotFoundException;
 import com.musyan.stok.repository.ProductRepository;
+import com.musyan.stok.repository.SaleOrderAllocationRepository;
 import com.musyan.stok.repository.SaleOrderRepository;
 import com.musyan.stok.repository.StockTransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,6 +33,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final StockTransactionRepository stockTransactionRepository;
     private final SaleOrderRepository saleOrderRepository;
+        private final SaleOrderAllocationRepository saleOrderAllocationRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -60,6 +64,22 @@ public class OrderService {
         int remainingToConsume = requestDto.getQuantity();
         BigDecimal totalCost = BigDecimal.ZERO;
 
+        BigDecimal totalAmount = requestDto.getUnitPrice()
+                .multiply(BigDecimal.valueOf(requestDto.getQuantity()))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        SaleOrder saleOrder = saleOrderRepository.save(SaleOrder.builder()
+                .orderCode("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                .product(product)
+                .quantity(requestDto.getQuantity())
+                .unitPrice(requestDto.getUnitPrice())
+                .totalAmount(totalAmount)
+                .totalCost(BigDecimal.ZERO)
+                .orderDate(LocalDateTime.now())
+                .build());
+
+        List<SaleOrderAllocation> allocations = new ArrayList<>();
+
         for (StockTransaction lot : fifoLots) {
             if (remainingToConsume == 0) {
                 break;
@@ -69,9 +89,17 @@ public class OrderService {
             totalCost = totalCost.add(lot.getUnitCost().multiply(BigDecimal.valueOf(consumeQuantity)));
             lot.setRemainingQuantity(lot.getRemainingQuantity() - consumeQuantity);
             remainingToConsume -= consumeQuantity;
+
+            allocations.add(SaleOrderAllocation.builder()
+                    .saleOrder(saleOrder)
+                    .sourceTransaction(lot)
+                    .quantity(consumeQuantity)
+                    .unitCost(lot.getUnitCost())
+                    .build());
         }
 
         stockTransactionRepository.saveAll(fifoLots);
+        saleOrderAllocationRepository.saveAll(allocations);
 
         BigDecimal averageConsumedCost = totalCost
                 .divide(BigDecimal.valueOf(requestDto.getQuantity()), 2, RoundingMode.HALF_UP);
@@ -88,20 +116,10 @@ public class OrderService {
         product.setQuantity(product.getQuantity() - requestDto.getQuantity());
         productRepository.save(product);
 
-        SaleOrder saleOrder = saleOrderRepository.save(SaleOrder.builder()
-                .orderCode("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
-                .product(product)
-                .quantity(requestDto.getQuantity())
-                .unitPrice(requestDto.getUnitPrice())
-                .totalCost(totalCost.setScale(2, RoundingMode.HALF_UP))
-                .orderDate(LocalDateTime.now())
-                .build());
+        saleOrder.setTotalCost(totalCost.setScale(2, RoundingMode.HALF_UP));
+        saleOrderRepository.save(saleOrder);
 
         eventPublisher.publishEvent(new StockChangedEvent(product.getProductCode()));
-
-        BigDecimal totalAmount = requestDto.getUnitPrice()
-                .multiply(BigDecimal.valueOf(requestDto.getQuantity()))
-                .setScale(2, RoundingMode.HALF_UP);
 
         return new OrderResponseDto(
                 saleOrder.getOrderId(),
@@ -109,7 +127,7 @@ public class OrderService {
                 product.getProductCode(),
                 saleOrder.getQuantity(),
                 saleOrder.getUnitPrice(),
-                totalAmount,
+                saleOrder.getTotalAmount(),
                 saleOrder.getTotalCost()
         );
     }
