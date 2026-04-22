@@ -2,8 +2,11 @@ package com.musyan.stok.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
@@ -39,4 +42,12 @@ public class Product extends BaseEntity {
 
     @Column(nullable = false, length = 30)
     private String unit;
+
+    @LastModifiedDate
+    @Column(insertable = false)
+    private LocalDateTime updatedAt;
+
+    @LastModifiedBy
+    @Column(insertable = false)
+    private String updatedBy;
 }

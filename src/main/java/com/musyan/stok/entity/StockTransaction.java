@@ -2,6 +2,8 @@ package com.musyan.stok.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -40,4 +42,12 @@ public class StockTransaction extends BaseEntity {
 
     @Column(nullable = false)
     private LocalDateTime transactionDate;
+
+    @LastModifiedDate
+    @Column(insertable = false)
+    private LocalDateTime updatedAt;
+
+    @LastModifiedBy
+    @Column(insertable = false)
+    private String updatedBy;
 }
