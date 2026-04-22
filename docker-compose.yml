@@ -9,12 +9,10 @@ services:
       POSTGRES_DB: stok_db
       POSTGRES_INITDB_ARGS: "--encoding=UTF8"
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       # Veritabanı verisi kalıcı tutmak için volume
       - postgres_data:/var/lib/postgresql/data
-      # İlk başta schema.sql'i çalıştırmak için
-      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U stok_user -d stok_db"]
       interval: 10s
@@ -41,8 +39,7 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
       SPRING_JPA_SHOW_SQL: "false"
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "false"
-      # Spring'in schema.sql'i tekrar çalıştırmasını önle (PostgreSQL init ediyor)
-      SPRING_SQL_INIT_MODE: never
+      SPRING_SQL_INIT_MODE: always
       
       # Logging
       LOGGING_LEVEL_ROOT: INFO
