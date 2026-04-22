@@ -7,10 +7,12 @@ import com.musyan.stok.event.StockChangedEvent;
 import com.musyan.stok.repository.ProductRepository;
 import com.musyan.stok.repository.StockTransactionRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -24,15 +26,17 @@ public class StockCostAsyncService {
     private final ProductRepository productRepository;
 
     @Async
-    @EventListener
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onStockChanged(StockChangedEvent event) {
-        Product product = productRepository.findByProductCode(event.productCode()).orElse(null);
-        if (product == null) return;
+        Long productId = productRepository.findByProductCode(event.productCode())
+                .map(p -> p.getProductId())
+                .orElse(null);
+        if (productId == null) return;
 
         List<StockTransaction> activeLots = stockTransactionRepository
                 .findByProductProductIdAndTransactionTypeAndRemainingQuantityGreaterThanOrderByTransactionDateAscTransactionIdAsc(
-                        product.getProductId(), StockTransactionType.IN, 0
+                        productId, StockTransactionType.IN, 0
                 );
 
         int totalRemainingQuantity = activeLots.stream().mapToInt(StockTransaction::getRemainingQuantity).sum();
@@ -45,7 +49,6 @@ public class StockCostAsyncService {
             newAverageCost = totalRemainingCost.divide(BigDecimal.valueOf(totalRemainingQuantity), 2, RoundingMode.HALF_UP);
         }
 
-        product.setUnitCost(newAverageCost);
-        productRepository.save(product);
+        productRepository.updateUnitCost(event.productCode(), newAverageCost);
     }
 }
