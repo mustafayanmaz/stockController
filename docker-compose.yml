@@ -21,6 +21,24 @@ services:
     networks:
       - stok_network
 
+  # RabbitMQ Message Broker Service
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: stok_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stok_network
+
   # Spring Boot Application Service
   app:
     build: .
@@ -28,11 +46,22 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       # Database configuration
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/stok_db
       SPRING_DATASOURCE_USERNAME: stok_user
       SPRING_DATASOURCE_PASSWORD: stok_password
+      
+      # Timezone
+      TZ: Europe/Istanbul
+
+      # RabbitMQ configuration
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
       
       # JPA/Hibernate configuration
       # ddl-auto=none: Tablolar PostgreSQL init scripti ile zaten oluşturuldu

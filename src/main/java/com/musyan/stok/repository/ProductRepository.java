@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
@@ -29,4 +30,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @Modifying
     @Query("UPDATE Product p SET p.unitCost = :unitCost WHERE p.productCode = :productCode")
     void updateUnitCost(@Param("productCode") String productCode, @Param("unitCost") BigDecimal unitCost);
+
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.minStockLevel > 0 AND p.quantity <= p.minStockLevel")
+    List<Product> findProductsBelowMinStockLevel();
 }

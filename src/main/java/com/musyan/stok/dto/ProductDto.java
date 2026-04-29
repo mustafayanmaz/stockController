@@ -44,6 +44,10 @@ public class ProductDto {
     @Schema(description = "Available stock quantity", example = "200")
     private Integer quantity;
 
+    @Min(value = 0, message = "Minimum stock level cannot be negative")
+    @Schema(description = "Minimum stock level threshold for alerts", example = "10")
+    private Integer minStockLevel;
+
     @Size(max = 30, message = "Unit must not exceed 30 characters")
     @Schema(description = "Stock unit", example = "pcs")
     private String unit;

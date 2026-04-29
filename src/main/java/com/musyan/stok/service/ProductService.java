@@ -33,6 +33,7 @@ public class ProductService {
 
         Product product = ProductMapper.mapToProduct(productDto, new Product());
         product.setQuantity(productDto.getQuantity() != null ? productDto.getQuantity() : 0);
+        product.setMinStockLevel(productDto.getMinStockLevel() != null ? productDto.getMinStockLevel() : 0);
         productRepository.save(product);
     }
 

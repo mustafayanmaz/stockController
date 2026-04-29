@@ -7,15 +7,16 @@ import com.musyan.stok.entity.SaleOrder;
 import com.musyan.stok.entity.SaleOrderAllocation;
 import com.musyan.stok.entity.StockTransaction;
 import com.musyan.stok.entity.StockTransactionType;
-import com.musyan.stok.event.StockChangedEvent;
+import com.musyan.stok.event.StockCostMessage;
 import com.musyan.stok.exception.InsufficientStockException;
 import com.musyan.stok.exception.ResourceNotFoundException;
 import com.musyan.stok.repository.ProductRepository;
 import com.musyan.stok.repository.SaleOrderAllocationRepository;
 import com.musyan.stok.repository.SaleOrderRepository;
 import com.musyan.stok.repository.StockTransactionRepository;
+import com.musyan.stok.config.RabbitMQConfig;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +35,7 @@ public class OrderService {
     private final StockTransactionRepository stockTransactionRepository;
     private final SaleOrderRepository saleOrderRepository;
         private final SaleOrderAllocationRepository saleOrderAllocationRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final RabbitTemplate rabbitTemplate;
 
     @Transactional
     public OrderResponseDto createOrder(OrderRequestDto requestDto) {
@@ -119,7 +120,7 @@ public class OrderService {
         saleOrder.setTotalCost(totalCost.setScale(2, RoundingMode.HALF_UP));
         saleOrderRepository.save(saleOrder);
 
-        eventPublisher.publishEvent(new StockChangedEvent(product.getProductCode()));
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, new StockCostMessage(product.getProductCode()));
 
         return new OrderResponseDto(
                 saleOrder.getOrderId(),

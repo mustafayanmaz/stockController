@@ -5,13 +5,14 @@ import com.musyan.stok.dto.StockTransactionDto;
 import com.musyan.stok.entity.Product;
 import com.musyan.stok.entity.StockTransaction;
 import com.musyan.stok.entity.StockTransactionType;
-import com.musyan.stok.event.StockChangedEvent;
+import com.musyan.stok.event.StockCostMessage;
 import com.musyan.stok.exception.InsufficientStockException;
 import com.musyan.stok.exception.ResourceNotFoundException;
 import com.musyan.stok.repository.ProductRepository;
 import com.musyan.stok.repository.StockTransactionRepository;
+import com.musyan.stok.config.RabbitMQConfig;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +27,7 @@ public class StockService {
 
     private final ProductRepository productRepository;
     private final StockTransactionRepository stockTransactionRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final RabbitTemplate rabbitTemplate;
 
     public StockDto fetchStockByProductCode(String productCode) {
         Product product = productRepository.findByProductCode(productCode)
@@ -57,7 +58,7 @@ public class StockService {
 
         stockTransactionRepository.save(transaction);
         productRepository.save(product);
-        eventPublisher.publishEvent(new StockChangedEvent(productCode));
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, new StockCostMessage(productCode));
         return true;
     }
 
@@ -112,7 +113,7 @@ public class StockService {
                 .build());
 
         productRepository.save(product);
-        eventPublisher.publishEvent(new StockChangedEvent(productCode));
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, new StockCostMessage(productCode));
         return true;
     }
 
@@ -139,7 +140,7 @@ public class StockService {
         product.setQuantity(stockDto.getQuantity());
         product.setUnit(stockDto.getUnit());
         productRepository.save(product);
-        eventPublisher.publishEvent(new StockChangedEvent(productCode));
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.ROUTING_KEY, new StockCostMessage(productCode));
         return true;
     }
 }

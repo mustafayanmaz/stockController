@@ -40,6 +40,9 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private Integer quantity;
 
+    @Column(nullable = false)
+    private Integer minStockLevel;
+
     @Column(nullable = false, length = 30)
     private String unit;
 

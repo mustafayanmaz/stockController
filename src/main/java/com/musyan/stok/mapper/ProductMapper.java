@@ -16,6 +16,7 @@ public final class ProductMapper {
         productDto.setUnitCost(product.getUnitCost());
         productDto.setActive(product.getActive());
         productDto.setQuantity(product.getQuantity());
+        productDto.setMinStockLevel(product.getMinStockLevel());
         productDto.setUnit(product.getUnit());
         return productDto;
     }

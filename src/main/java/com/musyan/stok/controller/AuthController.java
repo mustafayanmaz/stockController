@@ -26,7 +26,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody AuthRequestDto requestDto) {
 
-        // Temporary hardcoded basic authentication mechanism (as requested)
+        // Temporary hardcoded basic authentication mechanism
         if ("admin".equals(requestDto.getUsername()) && "admin".equals(requestDto.getPassword())) {
             String token = jwtUtil.generateToken(requestDto.getUsername());
             return ResponseEntity.ok(new AuthResponseDto(token));

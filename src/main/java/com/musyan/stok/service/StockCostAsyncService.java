@@ -1,18 +1,16 @@
 package com.musyan.stok.service;
 
-import com.musyan.stok.entity.Product;
+import com.musyan.stok.config.RabbitMQConfig;
 import com.musyan.stok.entity.StockTransaction;
 import com.musyan.stok.entity.StockTransactionType;
-import com.musyan.stok.event.StockChangedEvent;
+import com.musyan.stok.event.StockCostMessage;
 import com.musyan.stok.repository.ProductRepository;
 import com.musyan.stok.repository.StockTransactionRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -25,11 +23,10 @@ public class StockCostAsyncService {
     private final StockTransactionRepository stockTransactionRepository;
     private final ProductRepository productRepository;
 
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @RabbitListener(queues = RabbitMQConfig.QUEUE)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void onStockChanged(StockChangedEvent event) {
-        Long productId = productRepository.findByProductCode(event.productCode())
+    public void onStockChanged(StockCostMessage message) {
+        Long productId = productRepository.findByProductCode(message.productCode())
                 .map(p -> p.getProductId())
                 .orElse(null);
         if (productId == null) return;
@@ -49,6 +46,7 @@ public class StockCostAsyncService {
             newAverageCost = totalRemainingCost.divide(BigDecimal.valueOf(totalRemainingQuantity), 2, RoundingMode.HALF_UP);
         }
 
-        productRepository.updateUnitCost(event.productCode(), newAverageCost);
+        productRepository.updateUnitCost(message.productCode(), newAverageCost);
     }
 }
+
