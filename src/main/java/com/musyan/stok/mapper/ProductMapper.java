@@ -18,6 +18,7 @@ public final class ProductMapper {
         productDto.setQuantity(product.getQuantity());
         productDto.setMinStockLevel(product.getMinStockLevel());
         productDto.setUnit(product.getUnit());
+        productDto.setCreatedAt(product.getCreatedAt() != null ? product.getCreatedAt().toLocalDate() : null);
         return productDto;
     }
 
@@ -31,6 +32,11 @@ public final class ProductMapper {
             product.setUnit(productDto.getUnit());
         }
 
+        if (productDto.getCreatedAt() != null) {
+            product.setCreatedAt(productDto.getCreatedAt().atTime(9, 0, 0));
+        } else {
+            product.setCreatedAt(java.time.LocalDate.now().atTime(9, 0, 0));
+        }
         return product;
     }
 }

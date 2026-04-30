@@ -11,10 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/products")
 @RequiredArgsConstructor
 @Validated
 public class ProductControllerImpl implements IProductController {
@@ -78,5 +80,17 @@ public class ProductControllerImpl implements IProductController {
     @Override
     public ResponseEntity<Boolean> validateProductCode(@PathVariable String productCode) {
         return ResponseEntity.ok(productService.existsByProductCode(productCode));
+    }
+
+    @Override
+    public ResponseEntity<ResponseDto> importFromExcel(@RequestParam("file") MultipartFile file) {
+        try {
+            int count = productService.importFromExcel(file);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ResponseDto(StockConstants.STATUS_201, count + " product(s) imported successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseDto("400", "Excel import failed: " + e.getMessage()));
+        }
     }
 }

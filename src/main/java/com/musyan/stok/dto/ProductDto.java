@@ -6,6 +6,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 @Schema(name = "Product", description = "DTO for product operations in stock microservice")
@@ -47,6 +48,9 @@ public class ProductDto {
     @Min(value = 0, message = "Minimum stock level cannot be negative")
     @Schema(description = "Minimum stock level threshold for alerts", example = "10")
     private Integer minStockLevel;
+
+    @Schema(description = "Product creation date (dd.MM.yyyy)", example = "29.04.2026")
+    private LocalDate createdAt;
 
     @Size(max = 30, message = "Unit must not exceed 30 characters")
     @Schema(description = "Stock unit", example = "pcs")

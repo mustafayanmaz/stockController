@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -44,4 +45,8 @@ public interface IProductController {
     @GetMapping("/validate/{productCode}")
     ResponseEntity<Boolean> validateProductCode(
             @PathVariable("productCode") @NotBlank(message = "Product code must not be blank") String productCode);
+
+    @Operation(summary = "Import products from Excel", description = "REST API to bulk-import products from an .xlsx file")
+    @PostMapping(value = "/import", consumes = "multipart/form-data")
+    ResponseEntity<ResponseDto> importFromExcel(@RequestParam("file") MultipartFile file);
 }
