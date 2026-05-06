@@ -2,6 +2,7 @@ package com.musyan.stok.controller.impl;
 
 import com.musyan.stok.constants.StockConstants;
 import com.musyan.stok.controller.IProductController;
+import com.musyan.stok.dto.ImportResultDto;
 import com.musyan.stok.dto.ProductDto;
 import com.musyan.stok.dto.ProductFilterDto;
 import com.musyan.stok.dto.ResponseDto;
@@ -83,14 +84,14 @@ public class ProductControllerImpl implements IProductController {
     }
 
     @Override
-    public ResponseEntity<ResponseDto> importFromExcel(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<ImportResultDto> importFromExcel(@RequestParam("file") MultipartFile file) {
         try {
-            int count = productService.importFromExcel(file);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new ResponseDto(StockConstants.STATUS_201, count + " product(s) imported successfully"));
+            ImportResultDto result = productService.importFromExcel(file);
+            HttpStatus status = result.getSuccessCount() > 0 ? HttpStatus.CREATED : HttpStatus.UNPROCESSABLE_ENTITY;
+            return ResponseEntity.status(status).body(result);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseDto("400", "Excel import failed: " + e.getMessage()));
+                    .body(new ImportResultDto(0, java.util.List.of("Excel okunamadı: " + e.getMessage())));
         }
     }
 }

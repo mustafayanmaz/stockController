@@ -1,5 +1,6 @@
 package com.musyan.stok.controller;
 
+import com.musyan.stok.dto.ImportResultDto;
 import com.musyan.stok.dto.ProductDto;
 import com.musyan.stok.dto.ProductFilterDto;
 import com.musyan.stok.dto.ResponseDto;
@@ -46,7 +47,7 @@ public interface IProductController {
     ResponseEntity<Boolean> validateProductCode(
             @PathVariable("productCode") @NotBlank(message = "Product code must not be blank") String productCode);
 
-    @Operation(summary = "Import products from Excel", description = "REST API to bulk-import products from an .xlsx file")
+    @Operation(summary = "Import products from Excel", description = "REST API to bulk-import products from an .xlsx file. Valid rows are imported even if other rows fail.")
     @PostMapping(value = "/import", consumes = "multipart/form-data")
-    ResponseEntity<ResponseDto> importFromExcel(@RequestParam("file") MultipartFile file);
+    ResponseEntity<ImportResultDto> importFromExcel(@RequestParam("file") MultipartFile file);
 }
