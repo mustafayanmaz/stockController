@@ -39,6 +39,20 @@ services:
     networks:
       - stok_network
 
+  # Redis Cache Service
+  redis:
+    image: redis:7-alpine
+    container_name: stok_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stok_network
+
   # Spring Boot Application Service
   app:
     build: .
@@ -47,6 +61,8 @@ services:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       # Database configuration
@@ -62,6 +78,12 @@ services:
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: guest
       SPRING_RABBITMQ_PASSWORD: guest
+
+      # Redis configuration
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      APP_CACHE_LOCK_RETRY_COUNT: 20
+      APP_CACHE_LOCK_RETRY_DELAY_MS: 200
       
       # JPA/Hibernate configuration
       # ddl-auto=none: Tablolar PostgreSQL init scripti ile zaten oluşturuldu
